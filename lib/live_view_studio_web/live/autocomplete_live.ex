@@ -23,8 +23,8 @@ defmodule LiveViewStudioWeb.AutocompleteLive do
     <div id="search">
 
       <form phx-submit="zip-search">
-        <input type="text" name="zip" value="<%= @city %>"
-               placeholder="City"
+        <input type="text" name="zip" value="<%= @zip %>"
+               placeholder="Zip Code"
                autocomplete="off"
                <%= if @loading, do: "readonly" %> />
 
@@ -34,15 +34,22 @@ defmodule LiveViewStudioWeb.AutocompleteLive do
       </form>
 
       <form phx-submit="" phx-change="suggest-city">
-        <input type="text" name="city" value="<%= @zip %>"
-               placeholder="Zip Code"
+        <input type="text" name="city" value="<%= @city %>"
+               placeholder="City"
                autofocus autocomplete="off"
+               list="matches"
                <%= if @loading, do: "readonly" %> />
 
         <button type="submit">
           <img src="images/search.svg">
         </button>
       </form>
+
+      <datalist id="matches">
+        <%= for match <- @matches do %>
+          <option value="<%= match %>"<%= match %></option>
+        <% end %>
+      </datalist>
 
       <%= if @loading do %>
         <div class="loader">
@@ -97,7 +104,10 @@ defmodule LiveViewStudioWeb.AutocompleteLive do
     {:noreply, socket}
   end
 
-
+  def handle_event("suggest-city", %{"city" => prefix}, socket) do
+    socket = assign(socket, matches: Cities.suggest(prefix))
+    {:noreply, socket}
+  end
 
   def handle_info({:run_zip_search, zip}, socket) do
     case Stores.search_by_zip(zip) do

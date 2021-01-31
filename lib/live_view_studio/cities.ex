@@ -11,6 +11,7 @@ defmodule LiveViewStudio.Cities do
 
   def list_cities do
     [
+      "CDMX", "CDMX",
       "Abilene, TX",
       "Addison, IL",
       "Akron, OH",

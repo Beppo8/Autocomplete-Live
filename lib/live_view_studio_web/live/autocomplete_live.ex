@@ -33,11 +33,12 @@ defmodule LiveViewStudioWeb.AutocompleteLive do
         </button>
       </form>
 
-      <form phx-submit="" phx-change="suggest-city">
+      <form phx-submit="city-search" phx-change="suggest-city">
         <input type="text" name="city" value="<%= @city %>"
                placeholder="City"
                autofocus autocomplete="off"
                list="matches"
+               phx-debounce="1000"
                <%= if @loading, do: "readonly" %> />
 
         <button type="submit">
@@ -104,6 +105,19 @@ defmodule LiveViewStudioWeb.AutocompleteLive do
     {:noreply, socket}
   end
 
+  def handle_event("city-search", %{"city" => city}, socket) do
+    send(self(), {:run_city_search, city})
+
+    socket =
+      assign(socket,
+        city: city,
+        stores: [],
+        loading: true
+      )
+
+    {:noreply, socket}
+  end
+
   def handle_event("suggest-city", %{"city" => prefix}, socket) do
     socket = assign(socket, matches: Cities.suggest(prefix))
     {:noreply, socket}
@@ -115,6 +129,22 @@ defmodule LiveViewStudioWeb.AutocompleteLive do
         socket =
           socket
           |> put_flash(:info, "No stores matching \"#{zip}\"")
+          |> assign(stores: [], loading: false)
+
+        {:noreply, socket}
+
+      stores ->
+        socket = assign(socket, stores: stores, loading: false)
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info({:run_city_search, city}, socket) do
+    case Stores.search_by_city(city) do
+      [] ->
+        socket =
+          socket
+          |> put_flash(:info, "No stores matching \"#{city}\"")
           |> assign(stores: [], loading: false)
 
         {:noreply, socket}
